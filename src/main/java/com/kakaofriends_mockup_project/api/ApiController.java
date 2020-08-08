@@ -1,30 +1,32 @@
 package com.kakaofriends_mockup_project.api;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.kakaofriends_mockup_project.utils.CacheUtils;
 import com.kakaofriends_mockup_project.utils.CacheValue;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-
 @RequestMapping("/api")
 @RestController
 public class ApiController {
 
     // TODO: key를 값 그대로 박는게 아니라 동적으로 매핑 받을 수 있으면 좋을 듯...
+    // TODO 캐시키를 동적으로 만들도록 고도화 - (key = "t_isLogin", ttl = "10")
     @ApiCached(key = "1596428228035")
     @GetMapping("/category/items")
     public ResponseEntity<String> getCategoryItems(@RequestParam("t") String param) throws Exception {
 
+        // TODO AOP 내부로 이동 - setCache
         setCache(param, getCategoryItemsJson());                        // 일단 parameter를 key로 가정
 
-        //Thread.sleep(1000);
-
+        // TODO AOP 내부로 이동 - getDataOfCacheValueByKey
         return ResponseEntity.ok((String) getDataOfCacheValueByKey(param));
     }
 
@@ -35,8 +37,6 @@ public class ApiController {
 
         setCache(key, getHomeJson());
 
-        Thread.sleep(1000);
-
         return ResponseEntity.ok((String) getDataOfCacheValueByKey(key));
     }
 
@@ -46,11 +46,11 @@ public class ApiController {
 
         setCache(param, getMembersBasketJson());
 
-        Thread.sleep(1000);
-
         return ResponseEntity.ok((String) getDataOfCacheValueByKey(param));
     }
 
+    // FIXME 무조건 SET을 하고 있음 - 필요할 때만 DATA READ 하도록 수정
+    // TODO 컨트롤러가 아닌 AOP 내부로직으로 이동 
     public void setCache(String key, String value) {
 
         CacheUtils.cacheMap.set(key, getCacheValue(value));
@@ -58,10 +58,16 @@ public class ApiController {
 
     public CacheValue getCacheValue(String value) {
 
+        // TODO createdTime는 데이터와 묶이지 않도록 분리
         Map<String, Object> map = new HashMap<>();
+        // TODO 직렬화/역직렬화 대응 (애초에 String으로 떨어지게 로직 자체를 변경) -> 클래스가 지원하는 직렬화/역직렬화를 믿는 게 맞는 방법일 수도 있음
         map.put("createdTime", LocalDateTime.now());
         map.put("data", value);
 
+        String test = "Test";
+        test = test + "1";
+        
+        // TODO 빌더를 쓰는 이유는 데이터 임뮤터블 보장 -> 지금은 보장해주지 못하고 있기 때문에 -> 빌더를 걷어내든가, 아니면 내부 데이터를 임뮤터블하게 쓰든가
         return CacheValue.builder()
                 .map(map)
                 .build();
@@ -71,10 +77,15 @@ public class ApiController {
 
         CacheValue cacheValue = (CacheValue) CacheUtils.cacheMap.getValue(key);
 
-        return cacheValue.getMap().get("data");
+        return cacheValue.getMap().get("data"); // FIXME 필드명이 하드코딩 되어 있음 - 추적을 할 수가 없다 -> 지양해야 함
     }
 
     public String getCategoryItemsJson() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return "[{\"categorySeq\":1,\"code\":1,\"name\":\"카테고리\",\"parentCode\":0,\"step\":1}," +
                 "{\"categorySeq\":2,\"code\":2,\"name\":\"카카오프렌즈\",\"parentCode\":1,\"image1\":\"category_all_W_200428.jpg\",\"image2\":\"category_all_M_200428.jpg\",\"step\":1}," +
                 "{\"categorySeq\":3,\"code\":3,\"name\":\"카테고리\",\"parentCode\":1,\"image1\":\"category_all_W_200428.jpg\",\"image2\":\"category_all_M_200428.jpg\",\"step\":2}," +
@@ -180,6 +191,11 @@ public class ApiController {
     }
 
     public String getHomeJson() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return "{\"totalCount\":53,\"totalPageCount\":6,\"page\":1," +
                 "\"resultList\":[" +
                 "{\"homeSeq\":278,\"badgeSeq\":0,\"type\":\"A\",\"mainImage\":\"https://t1.kakaocdn.net/friends/prod/main_tab/home/home_20200722153145_kr.jpg\",\"badgeName\":\"NEW\",\"badgeColor\":\"#3ed2e5\",\"contentsType\":\"I\",\"title\":\"이렇게 완벽한 탁상시계\",\"linkUrl\":\"https://store.kakaofriends.com/kr/promotions/promotion/433\",\"credate\":\"2020-07-21 15:09:19.125\",\"moddate\":\"2020-07-30 11:59:35.026\",\"creuser\":\"leah.koh\",\"moduser\":\"sam.hj\",\"dbsts\":\"A\",\"language\":\"kr\",\"displays\":[],\"sdesc\":\"무선충전에 무드등까지, 탁상시계가 다 할게요. 꿀잠에 든 라이언&콘에게 오늘의 온도와 알람도 맡겨보세요.\"}," +
@@ -195,6 +211,11 @@ public class ApiController {
     }
 
     public String getMembersBasketJson() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return "{\"userId\":\"8b28009c-0130-4e9a-a32a-5e5c81dfd7b9\",\"basketCount\":0}";
     }
 
